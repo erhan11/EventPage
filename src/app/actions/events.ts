@@ -16,6 +16,9 @@ import { activePaidProvider } from "@/lib/payments/provider";
 import { refundStripePayment } from "@/lib/payments/stripe";
 import { randomToken, sha256 } from "@/lib/security/crypto";
 import { beginRefund, confirmRefund } from "@/lib/tickets/orders";
+import { emailEnabled, sendEmail } from "@/lib/email";
+import { staffInviteEmail } from "@/lib/email/templates";
+import { organizations } from "@/lib/db/schema";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -209,7 +212,7 @@ export async function refundOrder(eventId: string, orderId: string): Promise<Res
   return { ok: true };
 }
 
-export async function inviteStaff(eventId: string, email: string): Promise<Result<{ url: string }>> {
+export async function inviteStaff(eventId: string, email: string): Promise<Result<{ url: string; emailed: boolean }>> {
   const user = await managerFor(eventId);
   const clean = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean) || clean.length > 120) return { ok: false, error: "Enter a valid email." };
@@ -223,7 +226,17 @@ export async function inviteStaff(eventId: string, email: string): Promise<Resul
     createdBy: user.id,
     expiresAt: new Date(Date.now() + 7 * 864e5),
   });
-  return { ok: true, url: `${env.appUrl}/invite/${token}` };
+  const url = `${env.appUrl}/invite/${token}`;
+  let emailed = false;
+  if (emailEnabled()) {
+    const [info] = await db
+      .select({ title: events.title, orgName: organizations.name })
+      .from(events)
+      .innerJoin(organizations, eq(organizations.id, events.orgId))
+      .where(eq(events.id, eventId));
+    emailed = (await sendEmail({ to: clean, ...staffInviteEmail({ eventTitle: info.title, orgName: info.orgName, url }) })).sent;
+  }
+  return { ok: true, url, emailed };
 }
 
 export async function removeStaff(eventId: string, userId: string): Promise<Result> {

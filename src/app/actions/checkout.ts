@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { sendTicketsEmail } from "@/lib/tickets/notify";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { activePaidProvider } from "@/lib/payments/provider";
@@ -68,7 +70,10 @@ export async function startCheckout(_prev: CheckoutState, form: FormData): Promi
 
   const { order, accessToken } = created;
   const ticketsUrl = `/orders/${order.id}?t=${encodeURIComponent(accessToken)}`;
-  if (order.status === "paid") redirect(ticketsUrl);
+  if (order.status === "paid") {
+    after(() => sendTicketsEmail(order.id).catch((e) => console.error("[email] tickets email failed", e)));
+    redirect(ticketsUrl);
+  }
 
   let checkoutUrl: string;
   try {

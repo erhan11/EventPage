@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders, webhookEvents } from "@/lib/db/schema";
 import { confirmRefund, fulfillOrderOrFlag, type VerifiedPayment } from "@/lib/tickets/orders";
+import { sendTicketsEmail } from "@/lib/tickets/notify";
 import { refundStripePayment } from "./stripe";
 
 type Provider = "stripe" | "test_simulator";
@@ -26,6 +27,10 @@ export async function handleVerifiedPayment(provider: Provider, orderId: string,
     return;
   }
   const result = await fulfillOrderOrFlag(orderId, payment);
+  if (result.status === "fulfilled" || result.status === "already_fulfilled") {
+    // Email is best-effort: a failure must never fail the webhook (tickets are already issued).
+    await sendTicketsEmail(orderId).catch((e) => console.error("[email] tickets email failed", e));
+  }
   if (result.status === "needs_refund") {
     console.warn(`[webhook] order ${orderId} needs refund: ${result.reason}`);
     if (provider === "stripe" && payment.paymentId) await refundStripePayment(payment.paymentId, orderId);

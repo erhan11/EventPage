@@ -75,6 +75,7 @@ export function StaffPanel({ eventId, staff }: { eventId: string; staff: { id: s
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
+  const [emailed, setEmailed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -110,6 +111,7 @@ export function StaffPanel({ eventId, staff }: { eventId: string; staff: { id: s
               const r = await inviteStaff(eventId, email);
               if (r.ok) {
                 setLink(r.url);
+                setEmailed(r.emailed);
                 setEmail("");
               } else setError(r.error);
             });
@@ -128,7 +130,7 @@ export function StaffPanel({ eventId, staff }: { eventId: string; staff: { id: s
         </form>
         {link && (
           <div className="mt-4 rounded-2xl bg-surface p-4">
-            <p className="text-sm">Send this single-use link to your staff member (valid 7 days). They can only scan this event.</p>
+            <p className="text-sm">{emailed ? "Invite emailed. You can also share this single-use link (valid 7 days)." : "Send this single-use link to your staff member (valid 7 days)."} They can only scan this event.</p>
             <div className="mt-3 flex items-center gap-2">
               <code className="min-w-0 flex-1 truncate rounded-lg bg-raised px-3 py-2 text-xs">{link}</code>
               <Button

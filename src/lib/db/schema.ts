@@ -213,6 +213,9 @@ export const orders = pgTable(
     currency: text("currency").notNull(),
     /** Hash of the bearer token that lets the buyer view their tickets without an account. */
     accessTokenHash: text("access_token_hash").notNull(),
+    /** Second bearer token, minted when the tickets email is sent (we never store raw tokens). */
+    emailAccessHash: text("email_access_hash"),
+    ticketsEmailedAt: ts("tickets_emailed_at"),
     expiresAt: ts("expires_at").notNull(),
     paidAt: ts("paid_at"),
     refundedAt: ts("refunded_at"),

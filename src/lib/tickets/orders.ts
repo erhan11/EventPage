@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, or, sql } from "drizzle-orm";
 import { db, type Tx } from "@/lib/db";
 import { events, orderItems, orders, ticketTypes, tickets, type Order } from "@/lib/db/schema";
 import { humanCode, randomToken, sha256 } from "@/lib/security/crypto";
@@ -411,7 +411,7 @@ export async function findOrderByAccessToken(orderId: string, token: string) {
   const [order] = await db
     .select()
     .from(orders)
-    .where(and(eq(orders.id, orderId), eq(orders.accessTokenHash, sha256(token))))
+    .where(and(eq(orders.id, orderId), or(eq(orders.accessTokenHash, sha256(token)), eq(orders.emailAccessHash, sha256(token)))))
     .limit(1);
   return order ?? null;
 }
