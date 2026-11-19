@@ -11,7 +11,8 @@ export const env = {
     return required("DATABASE_URL");
   },
   get appUrl() {
-    return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const fromVercel = process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null;
+    return (process.env.APP_URL || fromVercel || "http://localhost:3000").replace(/\/$/, "");
   },
   get ticketSigningSecret() {
     const s = required("TICKET_SIGNING_SECRET");

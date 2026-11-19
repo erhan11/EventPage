@@ -78,13 +78,14 @@ async function main() {
   ]);
   await db.insert(s.eventStaff).values({ eventId: ev.id, userId: staff.id });
 
+  const credPath = process.env.SEED_CREDENTIALS_PATH ?? ".seed-credentials.local";
   writeFileSync(
-    ".seed-credentials.local",
+    credPath,
     `# Local demo accounts (development only)\norganizer@eventpage.test  ${organizerPw}\ndoor@eventpage.test       ${staffPw}\n`,
     { mode: 0o600 },
   );
   console.log("✓ Seeded 'Neon Tide' → /e/neon-tide");
-  console.log("✓ Demo logins written to .seed-credentials.local");
+  console.log(`✓ Demo logins written to ${credPath}`);
   process.exit(0);
 }
 
