@@ -1,26 +1,255 @@
 @import "tailwindcss";
 
+/*
+ * EventPage design system
+ * ───────────────────────
+ * App chrome: warm paper (light) / studio black (dark), one electric accent,
+ * mono micro-labels, editorial display type. Event pages carry their own
+ * palette via --ev-* variables (see lib/events/design.ts).
+ */
+
+/* Font family tokens (self-hosted via @fontsource, see app/layout.tsx) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --font-inter-tight: "Inter Tight Variable";
+  --font-jetbrains: "JetBrains Mono Variable";
+  --font-instrument-serif: "Instrument Serif";
+  --font-unbounded: "Unbounded Variable";
+  --font-archivo-black: "Archivo Black";
+  --font-space-mono: "Space Mono";
+  --font-syne: "Syne Variable";
+  --font-bricolage: "Bricolage Grotesque Variable";
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --bg: #f4f2ec;
+  --bg-raised: #fbfaf6;
+  --fg: #121211;
+  --muted: #6b6a64;
+  --line: #dcd9cf;
+  --line-strong: #c3c0b4;
+  --surface: #ebe8df;
+  --accent: #c6f432;
+  --accent-ink: #0b0b0a;
+  --danger: #d4301f;
+  --warn: #c27a00;
+  --ok: #1f8a4c;
+  --focus: #3b5bff;
+  --shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 12px 32px -16px rgb(0 0 0 / 0.18);
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not([data-theme="light"]) {
+    --bg: #0a0a0b;
+    --bg-raised: #131314;
+    --fg: #f2f1ec;
+    --muted: #8d8c86;
+    --line: #232325;
+    --line-strong: #353538;
+    --surface: #18181a;
+    --accent: #d4ff3a;
+    --accent-ink: #0b0b0a;
+    --danger: #ff5a47;
+    --warn: #ffb02e;
+    --ok: #3ddc84;
+    --focus: #8ea2ff;
+    --shadow: 0 1px 0 rgb(255 255 255 / 0.03), 0 18px 40px -20px rgb(0 0 0 / 0.8);
+    color-scheme: dark;
   }
 }
 
+:root[data-theme="dark"] {
+  --bg: #0a0a0b;
+  --bg-raised: #131314;
+  --fg: #f2f1ec;
+  --muted: #8d8c86;
+  --line: #232325;
+  --line-strong: #353538;
+  --surface: #18181a;
+  --accent: #d4ff3a;
+  --accent-ink: #0b0b0a;
+  --danger: #ff5a47;
+  --warn: #ffb02e;
+  --ok: #3ddc84;
+  --focus: #8ea2ff;
+  --shadow: 0 1px 0 rgb(255 255 255 / 0.03), 0 18px 40px -20px rgb(0 0 0 / 0.8);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-raised: var(--bg-raised);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-surface: var(--surface);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+
+  --color-ev-bg: var(--ev-bg);
+  --color-ev-fg: var(--ev-fg);
+  --color-ev-accent: var(--ev-accent);
+  --color-ev-on-accent: var(--ev-on-accent);
+  --color-ev-muted: var(--ev-muted);
+  --color-ev-line: var(--ev-line);
+  --color-ev-surface: var(--ev-surface);
+
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-serif: var(--font-instrument-serif), Georgia, serif;
+  --font-ev-display: var(--ev-font-display);
+  --font-ev-body: var(--ev-font-body);
+  --font-ev-mono: var(--ev-font-mono);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Primitives ─────────────────────────────────────────── */
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+@utility display-serif {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Event display type — driven by the chosen typography preset */
+@utility ev-display {
+  font-family: var(--ev-font-display);
+  font-weight: var(--ev-display-weight);
+  letter-spacing: var(--ev-display-tracking);
+  text-transform: var(--ev-display-case);
+  font-style: var(--ev-display-style);
+  line-height: 0.88;
+}
+
+/* Film grain overlay */
+@utility grain {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.11;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+}
+
+/* Ticket perforation edge */
+@utility perforated {
+  --hole: 9px;
+  mask:
+    radial-gradient(circle var(--hole) at 0 50%, #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle var(--hole) at 100% 50%, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+
+/* ── Motion ─────────────────────────────────────────────── */
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes drift {
+  50% {
+    transform: translate3d(3%, -2%, 0) scale(1.04);
+  }
+}
+
+@keyframes scanline {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(calc(var(--scan-h, 240px) - 2px));
+  }
+}
+
+.animate-marquee {
+  animation: marquee 38s linear infinite;
+}
+.animate-rise {
+  animation: rise 0.9s var(--ease-out-expo) both;
+}
+.animate-drift {
+  animation: drift 18s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

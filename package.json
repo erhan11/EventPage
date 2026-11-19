@@ -6,22 +6,50 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx --conditions=react-server scripts/seed.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/inter-tight": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/syne": "^5.3.0",
+    "@fontsource-variable/unbounded": "^5.3.0",
+    "@fontsource/archivo-black": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
+    "@fontsource/space-mono": "^5.3.0",
+    "@vercel/blob": "^2.9.0",
+    "drizzle-orm": "^0.45.4",
+    "jsqr": "^1.4.0",
+    "lucide-react": "^1.76.0",
     "next": "16.4.6",
+    "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "stripe": "^23.2.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
-    "@types/node": "^20",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.10",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.1.1"
   },
   "packageManager": "pnpm@9.15.9"
 }

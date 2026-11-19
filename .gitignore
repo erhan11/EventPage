@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+.seed-credentials.local
+!.env.example
+
+# local tool config
+/.claude/
