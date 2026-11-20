@@ -16,15 +16,17 @@ export default async function Home() {
       <header className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-5 sm:px-8">
         <Logo />
         <div className="flex items-center gap-3">
-          <ThemeToggle />
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
           {user ? (
             <ButtonLink href="/dashboard">Dashboard</ButtonLink>
           ) : (
             <>
-              <Link href="/login" className="inline-flex h-11 items-center px-2 text-sm text-muted hover:text-fg">
+              <Link href="/login" className="inline-flex h-11 items-center px-2 text-sm whitespace-nowrap text-muted hover:text-fg">
                 Sign in
               </Link>
-              <ButtonLink href="/signup">Start free</ButtonLink>
+              <ButtonLink href="/signup" className="whitespace-nowrap">Start free</ButtonLink>
             </>
           )}
         </div>
@@ -138,6 +140,9 @@ export default async function Home() {
       <footer className="border-t border-line">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-4 px-5 py-8 sm:px-8">
           <Logo />
+          <div className="sm:hidden">
+            <ThemeToggle />
+          </div>
           <span className="label-mono text-muted">Made for the dancefloor</span>
         </div>
       </footer>
