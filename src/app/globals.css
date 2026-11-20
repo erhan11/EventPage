@@ -237,7 +237,7 @@ body {
   animation: marquee 38s linear infinite;
 }
 .animate-rise {
-  animation: rise 0.9s var(--ease-out-expo) both;
+  animation: rise 0.6s var(--ease-out-expo) both;
 }
 .animate-drift {
   animation: drift 18s ease-in-out infinite;

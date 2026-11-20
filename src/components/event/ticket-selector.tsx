@@ -1,7 +1,7 @@
 "use client";
 
 import { Lock, Minus, Plus } from "lucide-react";
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { startCheckout, type CheckoutState } from "@/app/actions/checkout";
 import { TIER_LABEL, type TicketOption } from "@/lib/events/view";
 import { fmt, formatMoney, formatPrice } from "@/lib/format";
@@ -51,6 +51,20 @@ export function TicketSelector({
   const count = lines.reduce((s, l) => s + l.quantity, 0);
   const total = options.reduce((s, o) => s + (qty[o.id] ?? 0) * o.priceCents, 0);
 
+  // Phones: the order summary sits below every tier, so once something is selected a
+  // bar pinned to the bottom of the tier list carries the running total until the
+  // summary itself scrolls into view.
+  const summaryRef = useRef<HTMLElement>(null);
+  const [summaryVisible, setSummaryVisible] = useState(false);
+  useEffect(() => {
+    const el = summaryRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => setSummaryVisible(entry.isIntersecting), { threshold: 0.25 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const showBar = count > 0 && !summaryVisible && !disabled;
+
   const set = (id: string, n: number, max: number) => setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(max, n)) }));
 
   if (options.length === 0) {
@@ -67,63 +81,87 @@ export function TicketSelector({
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="lines" value={JSON.stringify(lines)} />
 
-      <ul className="grid gap-4">
-        {options.map((o) => {
-          const n = qty[o.id] ?? 0;
-          const buyable = o.availability === "available" || o.availability === "low";
-          const vip = o.tier === "vip";
-          const label = availabilityLabel(o, timezone);
-          return (
-            <li
-              key={o.id}
-              className={`perforated relative grid grid-cols-[1fr_auto] overflow-hidden rounded-[22px] border transition-all duration-500 ease-[var(--ease-out-expo)] ${
-                n > 0 ? "border-ev-accent shadow-[0_0_0_1px_var(--ev-accent)]" : "border-ev-line"
-              } ${vip ? "bg-ev-fg text-ev-bg" : "bg-ev-surface"} ${buyable ? "" : "opacity-55"}`}
-            >
-              <div className="p-5 @xl:p-7">
-                <div className="flex flex-wrap items-center gap-2 font-ev-mono text-[10px] tracking-[0.18em] uppercase">
-                  <span className={vip ? "font-semibold opacity-60" : "text-ev-accent"}>{TIER_LABEL[o.tier]}</span>
-                  {label && (
-                    <span className={`rounded-full border px-2 py-0.5 ${vip ? "border-ev-bg/25" : "border-ev-line"}`}>{label}</span>
-                  )}
+      <div>
+        <ul className="grid gap-4">
+          {options.map((o) => {
+            const n = qty[o.id] ?? 0;
+            const buyable = o.availability === "available" || o.availability === "low";
+            const vip = o.tier === "vip";
+            const label = availabilityLabel(o, timezone);
+            return (
+              <li
+                key={o.id}
+                className={`perforated relative grid grid-cols-[1fr_auto] overflow-hidden rounded-[22px] border transition-all duration-500 ease-[var(--ease-out-expo)] ${
+                  n > 0 ? "border-ev-accent shadow-[0_0_0_1px_var(--ev-accent)]" : "border-ev-line"
+                } ${vip ? "bg-ev-fg text-ev-bg" : "bg-ev-surface"} ${buyable ? "" : "opacity-55"}`}
+              >
+                <div className="p-5 @xl:p-7">
+                  <div className="flex flex-wrap items-center gap-2 font-ev-mono text-[10px] tracking-[0.18em] uppercase">
+                    <span className={vip ? "font-semibold opacity-60" : "text-ev-accent"}>{TIER_LABEL[o.tier]}</span>
+                    {label && (
+                      <span className={`rounded-full border px-2 py-0.5 ${vip ? "border-ev-bg/25" : "border-ev-line"}`}>{label}</span>
+                    )}
+                  </div>
+                  <h3 className="mt-3 text-xl font-semibold tracking-tight @xl:text-2xl">{o.name}</h3>
+                  {o.description && <p className={`mt-1.5 max-w-md text-sm leading-relaxed ${vip ? "opacity-70" : "text-ev-muted"}`}>{o.description}</p>}
+                  <div className="ev-display mt-5 text-4xl tabular @xl:text-5xl">{formatPrice(o.priceCents, currency)}</div>
                 </div>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight @xl:text-2xl">{o.name}</h3>
-                {o.description && <p className={`mt-1.5 max-w-md text-sm leading-relaxed ${vip ? "opacity-70" : "text-ev-muted"}`}>{o.description}</p>}
-                <div className="ev-display mt-5 text-4xl tabular @xl:text-5xl">{formatPrice(o.priceCents, currency)}</div>
-              </div>
 
-              <div className={`flex flex-col items-center justify-center gap-3 border-l border-dashed px-4 @xl:px-7 ${vip ? "border-ev-bg/25" : "border-ev-line"}`}>
-                <span className="sr-only" id={`qty-${o.id}`}>
-                  Quantity for {o.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => set(o.id, n + 1, o.maxPerOrder)}
-                  disabled={!buyable || disabled || n >= o.maxPerOrder}
-                  aria-label={`Add one ${o.name}`}
-                  className="grid h-11 w-11 place-items-center rounded-full bg-ev-accent text-ev-on-accent transition-transform duration-300 ease-[var(--ease-spring)] hover:scale-110 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
-                >
-                  <Plus size={18} strokeWidth={2.5} />
-                </button>
-                <output aria-labelledby={`qty-${o.id}`} aria-live="polite" className="font-ev-mono text-xl tabular">
-                  {n}
-                </output>
-                <button
-                  type="button"
-                  onClick={() => set(o.id, n - 1, o.maxPerOrder)}
-                  disabled={n === 0}
-                  aria-label={`Remove one ${o.name}`}
-                  className={`grid h-11 w-11 place-items-center rounded-full border transition-transform duration-300 ease-[var(--ease-spring)] hover:scale-110 active:scale-90 disabled:pointer-events-none disabled:opacity-30 ${vip ? "border-ev-bg/30" : "border-ev-line"}`}
-                >
-                  <Minus size={18} strokeWidth={2.5} />
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+                <div className={`flex flex-col items-center justify-center gap-3 border-l border-dashed px-4 @xl:px-7 ${vip ? "border-ev-bg/25" : "border-ev-line"}`}>
+                  <span className="sr-only" id={`qty-${o.id}`}>
+                    Quantity for {o.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => set(o.id, n + 1, o.maxPerOrder)}
+                    disabled={!buyable || disabled || n >= o.maxPerOrder}
+                    aria-label={`Add one ${o.name}`}
+                    className="grid h-11 w-11 place-items-center rounded-full bg-ev-accent text-ev-on-accent transition-transform duration-300 ease-[var(--ease-spring)] hover:scale-110 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <Plus size={18} strokeWidth={2.5} />
+                  </button>
+                  <output aria-labelledby={`qty-${o.id}`} aria-live="polite" className="font-ev-mono text-xl tabular">
+                    {n}
+                  </output>
+                  <button
+                    type="button"
+                    onClick={() => set(o.id, n - 1, o.maxPerOrder)}
+                    disabled={n === 0}
+                    aria-label={`Remove one ${o.name}`}
+                    className={`grid h-11 w-11 place-items-center rounded-full border transition-transform duration-300 ease-[var(--ease-spring)] hover:scale-110 active:scale-90 disabled:pointer-events-none disabled:opacity-30 ${vip ? "border-ev-bg/30" : "border-ev-line"}`}
+                  >
+                    <Minus size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
 
-      <aside className="rounded-[22px] border border-ev-line bg-ev-bg p-5 @4xl:sticky @4xl:top-24 @xl:p-6">
+        <div className="sticky bottom-0 z-20 h-0 @4xl:hidden" aria-hidden={!showBar}>
+          <a
+            href="#order"
+            tabIndex={showBar ? 0 : -1}
+            className={`absolute inset-x-0 flex items-center justify-between rounded-full bg-ev-accent px-6 py-4 font-semibold text-ev-on-accent shadow-[0_18px_40px_-12px_rgba(0,0,0,0.5)] transition-all duration-300 ease-[var(--ease-out-expo)] active:scale-[0.98] ${
+              showBar ? "" : "pointer-events-none translate-y-4 opacity-0"
+            }`}
+            style={{ bottom: "max(env(safe-area-inset-bottom), 12px)" }}
+          >
+            <span className="tabular">
+              {count} {count === 1 ? "ticket" : "tickets"} · {formatMoney(total, currency)}
+            </span>
+            <span>
+              Checkout <span aria-hidden>↓</span>
+            </span>
+          </a>
+        </div>
+      </div>
+
+      <aside
+        id="order"
+        ref={summaryRef}
+        className="scroll-mt-24 rounded-[22px] border border-ev-line bg-ev-bg p-5 @4xl:sticky @4xl:top-24 @xl:p-6"
+      >
         <div className="flex items-baseline justify-between font-ev-mono text-[11px] tracking-[0.18em] text-ev-muted uppercase">
           <span>Your order</span>
           <span className="tabular">{count} {count === 1 ? "ticket" : "tickets"}</span>

@@ -21,7 +21,7 @@ export default async function Home() {
             <ButtonLink href="/dashboard">Dashboard</ButtonLink>
           ) : (
             <>
-              <Link href="/login" className="hidden px-2 text-sm text-muted hover:text-fg sm:inline">
+              <Link href="/login" className="inline-flex h-11 items-center px-2 text-sm text-muted hover:text-fg">
                 Sign in
               </Link>
               <ButtonLink href="/signup">Start free</ButtonLink>
@@ -116,6 +116,22 @@ export default async function Home() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="border-t border-line bg-raised" aria-labelledby="start-h">
+          <div className="mx-auto flex max-w-[1400px] flex-wrap items-end justify-between gap-8 px-5 py-20 sm:px-8">
+            <h2 id="start-h" className="text-[clamp(2.5rem,5vw,4.5rem)] leading-[0.95] font-semibold tracking-[-0.045em]">
+              Your next night, <span className="display-serif font-normal italic">live</span> in minutes.
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              <ButtonLink href={user ? "/dashboard" : "/signup"} className="h-12 bg-accent px-6 text-accent-ink hover:bg-accent hover:brightness-95">
+                {user ? "Open dashboard" : "Create your event"} <ArrowRight size={16} />
+              </ButtonLink>
+              <ButtonLink href="/e/neon-tide" variant="secondary" className="h-12 px-6">
+                See a live page
+              </ButtonLink>
+            </div>
+          </div>
         </section>
       </main>
 
