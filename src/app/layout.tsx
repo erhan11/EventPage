@@ -13,7 +13,12 @@ import "@fontsource-variable/syne";
 import "@fontsource-variable/bricolage-grotesque";
 import "./globals.css";
 
+const appUrl =
+  process.env.APP_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
   title: { default: "EventPage — Event pages & ticketing for electronic music", template: "%s · EventPage" },
   description:
     "Design an immersive event page, sell tickets, and run the door — built for clubs, DJs, beach parties and small festivals.",
@@ -35,7 +40,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-full focus:bg-fg focus:px-4 focus:py-2 focus:text-sm focus:text-bg"
+        >
+          Skip to content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

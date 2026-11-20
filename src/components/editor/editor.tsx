@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Calendar, Check, ExternalLink, Link2, ListMusic, Loader2, MapPin, Monitor, Palette, Smartphone, Ticket, TriangleAlert, Type } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { saveEventDraft, setEventStatus } from "@/app/actions/events";
 import { EventView } from "@/components/event/event-view";
 import type { EventDraft } from "@/lib/events/validation";
@@ -62,6 +62,18 @@ export function Editor({
 
   const update = <K extends keyof EventDraft>(key: K, value: EventDraft[K]) => setDraft((d) => ({ ...d, [key]: value }));
 
+  const flushSave = useCallback(async () => {
+    const snapshot = latest.current;
+    setSave({ kind: "saving" });
+    try {
+      const r = await saveEventDraft(eventId, snapshot);
+      if (latest.current !== snapshot) return; // newer edit pending
+      setSave(r.ok ? { kind: "saved", at: r.savedAt } : { kind: "error", message: r.error });
+    } catch {
+      setSave({ kind: "error", message: "Couldn't reach the server — retrying on next change." });
+    }
+  }, [eventId]);
+
   // Debounced autosave.
   useEffect(() => {
     if (first.current) {
@@ -69,18 +81,21 @@ export function Editor({
       return;
     }
     setSave({ kind: "saving" });
-    const handle = setTimeout(async () => {
-      const snapshot = latest.current;
-      try {
-        const r = await saveEventDraft(eventId, snapshot);
-        if (latest.current !== snapshot) return; // newer edit pending
-        setSave(r.ok ? { kind: "saved", at: r.savedAt } : { kind: "error", message: r.error });
-      } catch {
-        setSave({ kind: "error", message: "Couldn't reach the server — retrying on next change." });
-      }
-    }, 700);
+    const handle = setTimeout(flushSave, 700);
     return () => clearTimeout(handle);
-  }, [draft, eventId]);
+  }, [draft, flushSave]);
+
+  // ⌘S / Ctrl+S saves immediately — muscle memory deserves respect.
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        flushSave();
+      }
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [flushSave]);
 
   // Warn before leaving with unsaved edits.
   useEffect(() => {

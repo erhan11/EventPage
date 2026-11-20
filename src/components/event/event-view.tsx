@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight, MapPin } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, CalendarPlus, MapPin } from "lucide-react";
 import { designVars, THEMES } from "@/lib/events/design";
 import type { EventViewModel } from "@/lib/events/view";
 import { fmt } from "@/lib/format";
 import { HeroArt } from "./hero-art";
 import { TicketSelector } from "./ticket-selector";
+import { TicketStickyBar } from "./ticket-sticky-bar";
+
+const isPast = (iso: string) => new Date(iso).getTime() <= Date.now();
 
 /**
  * The public event page. Uses container queries (@container) rather than viewport
@@ -26,6 +29,13 @@ export function EventView({
   const dark = THEMES[d.theme]?.dark ?? true;
   const live = mode === "live";
   const headliners = event.lineup.filter((l) => l.name.trim());
+  const past = isPast(event.endsAt);
+  const onSale = event.status === "published" && !past;
+  const statusLabel =
+    event.status === "cancelled" ? "Cancelled" : event.status === "draft" ? "Draft preview" : past ? "Past event" : "On sale";
+  const buyable = event.tickets.filter((t) => t.availability === "available" || t.availability === "low");
+  // The sticky bar quotes the cheapest *paid* tier; "free entry" only when that is all there is.
+  const paidFrom = buyable.filter((t) => t.priceCents > 0).map((t) => t.priceCents);
 
   return (
     <div
@@ -71,10 +81,12 @@ export function EventView({
           <div className="mb-6 flex flex-wrap items-center gap-x-6 gap-y-2 font-ev-mono text-[11px] tracking-[0.18em] uppercase animate-rise">
             <span className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-ev-accent" style={{ animation: "pulse-ring 1.8s ease-out infinite" }} />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-ev-accent" />
+                {onSale && (
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-ev-accent" style={{ animation: "pulse-ring 1.8s ease-out infinite" }} />
+                )}
+                <span className={`relative inline-flex h-2 w-2 rounded-full ${onSale ? "bg-ev-accent" : "bg-ev-muted"}`} />
               </span>
-              {event.status === "cancelled" ? "Cancelled" : event.status === "draft" ? "Draft preview" : "On sale"}
+              {statusLabel}
             </span>
             <span>{fmt.weekday(event.startsAt, tz)}</span>
             <span>
@@ -221,16 +233,26 @@ export function EventView({
               </div>
             ))}
           </dl>
-          {(event.venueAddress || event.city) && (
-            <a
-              className="mt-6 inline-flex items-center gap-2 font-ev-mono text-xs tracking-[0.14em] uppercase underline decoration-ev-accent decoration-2 underline-offset-4 hover:text-ev-accent"
-              href={`https://www.openstreetmap.org/search?query=${encodeURIComponent([event.venueName, event.venueAddress, event.city].filter(Boolean).join(", "))}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <MapPin size={14} aria-hidden /> Open map <ArrowUpRight size={14} aria-hidden />
-            </a>
-          )}
+          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3">
+            {(event.venueAddress || event.city) && (
+              <a
+                className="inline-flex items-center gap-2 font-ev-mono text-xs tracking-[0.14em] uppercase underline decoration-ev-accent decoration-2 underline-offset-4 hover:text-ev-accent"
+                href={`https://www.openstreetmap.org/search?query=${encodeURIComponent([event.venueName, event.venueAddress, event.city].filter(Boolean).join(", "))}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MapPin size={14} aria-hidden /> Open map <ArrowUpRight size={14} aria-hidden />
+              </a>
+            )}
+            {live && (
+              <a
+                className="inline-flex items-center gap-2 font-ev-mono text-xs tracking-[0.14em] uppercase underline decoration-ev-accent decoration-2 underline-offset-4 hover:text-ev-accent"
+                href={`/e/${event.slug}/ics`}
+              >
+                <CalendarPlus size={14} aria-hidden /> Add to calendar
+              </a>
+            )}
+          </div>
         </div>
       </section>
 
@@ -252,6 +274,7 @@ export function EventView({
           eventId={event.id}
           slug={event.slug}
           currency={event.currency}
+          timezone={event.timezone}
           options={event.tickets}
           disabled={!live || event.status !== "published"}
           disabledReason={!live ? "Checkout is disabled in preview" : event.status === "cancelled" ? "This event was cancelled" : "Sales are not open"}
@@ -261,6 +284,10 @@ export function EventView({
       </section>
 
       {/* ── Footer ──────────────────────────────────── */}
+      {live && onSale && buyable.length > 0 && (
+        <TicketStickyBar fromCents={paidFrom.length ? Math.min(...paidFrom) : 0} currency={event.currency} />
+      )}
+
       <footer className="border-t border-ev-line px-5 pt-14 pb-10 @3xl:px-10">
         <div className="flex flex-col justify-between gap-10 @3xl:flex-row @3xl:items-end">
           <div className="ev-display text-[clamp(2.5rem,10cqi,8rem)] text-ev-fg/90">{event.title || "Untitled"}</div>

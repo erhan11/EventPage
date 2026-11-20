@@ -1,4 +1,5 @@
 import { and, asc, eq, ne } from "drizzle-orm";
+import { CalendarPlus } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
@@ -60,7 +61,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
       : [];
 
   return (
-    <main style={designVars(event.design)} className="@container min-h-svh bg-ev-bg font-ev-body text-ev-fg">
+    <main id="main" style={designVars(event.design)} className="@container min-h-svh bg-ev-bg font-ev-body text-ev-fg">
       <div className="mx-auto max-w-xl px-5 py-10">
         <a href={`/e/${event.slug}`} className="font-ev-mono text-[11px] tracking-[0.18em] text-ev-muted uppercase hover:text-ev-fg">
           ← {orgName}
@@ -69,6 +70,12 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
         <p className="mt-4 font-ev-mono text-xs tracking-[0.14em] text-ev-muted uppercase">
           {fmt.weekday(event.startsAt, tz)} {fmt.date(event.startsAt, tz)} · {fmt.time(event.startsAt, tz)} · {event.venueName}
         </p>
+        <a
+          href={`/e/${event.slug}/ics`}
+          className="mt-3 inline-flex items-center gap-1.5 font-ev-mono text-[11px] tracking-[0.14em] uppercase underline decoration-ev-accent decoration-2 underline-offset-4 hover:text-ev-accent"
+        >
+          <CalendarPlus size={13} aria-hidden /> Add to calendar
+        </a>
 
         {order.status === "pending" && <PaymentPoller orderId={order.id} token={t} />}
 

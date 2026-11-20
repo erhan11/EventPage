@@ -30,7 +30,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <main>
+      <main id="main">
         <section className="mx-auto grid max-w-[1400px] gap-12 px-5 pt-14 pb-20 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:pt-24">
           <div>
             <span className="label-mono inline-flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-muted">

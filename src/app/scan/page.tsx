@@ -34,7 +34,7 @@ export default async function ScanHome() {
     : [];
 
   return (
-    <main data-theme="dark" className="min-h-svh bg-[#0a0a0b] px-5 py-6 text-[#f2f1ec] [color-scheme:dark]">
+    <main id="main" data-theme="dark" className="min-h-svh bg-[#0a0a0b] px-5 py-6 text-[#f2f1ec] [color-scheme:dark]">
       <div className="mx-auto max-w-lg">
         <div className="flex items-center justify-between">
           <Logo />

@@ -27,6 +27,7 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioRef = useRef<AudioContext | null>(null);
   const busy = useRef(false);
   const lastCode = useRef<{ v: string; t: number }>({ v: "", t: 0 });
   const [camera, setCamera] = useState<"off" | "starting" | "on" | "denied" | "unsupported">("off");
@@ -37,6 +38,33 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
   const [code, setCode] = useState("");
   const [online, setOnline] = useState(true);
   const [torch, setTorch] = useState(false);
+
+  // Created inside a user gesture (start button / manual submit) so playback is allowed.
+  const ensureAudio = useCallback(() => {
+    try {
+      const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (Ctor && !audioRef.current) audioRef.current = new Ctor();
+    } catch {}
+  }, []);
+
+  /** Audible verdict for loud rooms: short high beep = in, long low buzz = stop. */
+  const beep = useCallback((ok: boolean) => {
+    const ctx = audioRef.current;
+    if (!ctx) return;
+    try {
+      if (ctx.state === "suspended") void ctx.resume();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.type = ok ? "sine" : "square";
+      o.frequency.value = ok ? 880 : 180;
+      g.gain.setValueAtTime(0.12, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + (ok ? 0.15 : 0.4));
+      o.start();
+      o.stop(ctx.currentTime + (ok ? 0.16 : 0.42));
+    } catch {}
+  }, []);
 
   const submit = useCallback(
     async (input: string) => {
@@ -69,6 +97,7 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
       }
       setShown(r);
       setHistory((h) => [r, ...h].slice(0, 12));
+      beep(r.outcome === "admitted");
       try {
         navigator.vibrate?.(OUTCOME[r.outcome].vibrate as unknown as number[]);
       } catch {}
@@ -80,7 +109,7 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
         r.outcome === "admitted" ? 1400 : 2600,
       );
     },
-    [eventId, router],
+    [eventId, router, beep],
   );
 
   const stop = useCallback(() => {
@@ -91,6 +120,7 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
 
   const start = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) return setCamera("unsupported");
+    ensureAudio();
     setCamera("starting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -105,7 +135,7 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
     } catch {
       setCamera("denied");
     }
-  }, []);
+  }, [ensureAudio]);
 
   // Decode loop: native BarcodeDetector when available, jsQR fallback.
   useEffect(() => {
@@ -162,6 +192,39 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
   }, [camera, submit]);
 
   useEffect(() => () => stop(), [stop]);
+
+  // Keep the screen awake while scanning — a sleeping phone is a stalled door.
+  useEffect(() => {
+    if (camera !== "on") return;
+    let sentinel: { release(): Promise<void> } | null = null;
+    const nav = navigator as unknown as { wakeLock?: { request(type: "screen"): Promise<{ release(): Promise<void> }> } };
+    const acquire = () => nav.wakeLock?.request("screen").then((s) => void (sentinel = s)).catch(() => {});
+    acquire();
+    const onVis = () => {
+      if (document.visibilityState === "visible") acquire();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      sentinel?.release().catch(() => {});
+    };
+  }, [camera]);
+
+  // If camera permission was already granted, resume scanning without a tap.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await navigator.permissions?.query({ name: "camera" as PermissionName });
+        if (!cancelled && status?.state === "granted") start();
+      } catch {
+        /* Safari has no "camera" permission name — the big start button remains. */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [start]);
 
   // Keep totals fresh when several devices scan the same door.
   useEffect(() => {
@@ -297,6 +360,7 @@ export function Scanner({ eventId, title, accent, initialTotals, staffName }: { 
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              ensureAudio();
               if (code.trim()) {
                 lastCode.current = { v: "", t: 0 };
                 submit(code.trim());

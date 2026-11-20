@@ -2,6 +2,7 @@ import { ArrowUpRight, PenLine } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CopyLinkButton } from "@/components/dashboard/copy-link";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { ButtonLink, Card } from "@/components/ui/primitives";
 import { canAccessEvent } from "@/lib/auth/access";
@@ -45,7 +46,7 @@ export default async function EventOverview({ params, searchParams }: PageProps<
   const past = event.endsAt <= new Date();
 
   return (
-    <main className="mx-auto max-w-[1400px] px-5 pt-8 pb-24 sm:px-8 sm:pt-12">
+    <main id="main" className="mx-auto max-w-[1400px] px-5 pt-8 pb-24 sm:px-8 sm:pt-12">
       <Link href="/dashboard" className="label-mono text-muted hover:text-fg">
         ← All events
       </Link>
@@ -61,6 +62,7 @@ export default async function EventOverview({ params, searchParams }: PageProps<
           <h1 className="mt-3 text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.045em]">{event.title}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {event.status === "published" && <CopyLinkButton slug={event.slug} />}
           <ButtonLink href={`/dashboard/events/${id}/edit`} variant="secondary">
             <PenLine size={15} /> Edit page
           </ButtonLink>

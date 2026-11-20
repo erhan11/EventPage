@@ -34,6 +34,17 @@ const TIMEZONES = [
 
 export function ContentPanel({ draft, update }: { draft: EventDraft; update: Update }) {
   const [slugTouched, setSlugTouched] = useState(false);
+  // Moving the start keeps the night's length — the end shifts along instead of erroring.
+  const moveStart = (start: string) => {
+    const prevStart = new Date(draft.startsLocal).getTime();
+    const prevEnd = new Date(draft.endsLocal).getTime();
+    update("startsLocal", start);
+    if (draft.endsLocal > start) return;
+    const duration = prevEnd > prevStart ? prevEnd - prevStart : 8 * 36e5;
+    const end = new Date(new Date(start).getTime() + duration);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    update("endsLocal", `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}`);
+  };
   return (
     <div className="grid gap-5">
       <PanelTitle hint="The essentials people see first.">Event</PanelTitle>
@@ -67,10 +78,10 @@ export function ContentPanel({ draft, update }: { draft: EventDraft; update: Upd
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Starts">
-          <Input type="datetime-local" value={draft.startsLocal} onChange={(e) => e.target.value && update("startsLocal", e.target.value)} />
+          <Input type="datetime-local" value={draft.startsLocal} onChange={(e) => e.target.value && moveStart(e.target.value)} />
         </Field>
         <Field label="Ends">
-          <Input type="datetime-local" value={draft.endsLocal} onChange={(e) => e.target.value && update("endsLocal", e.target.value)} />
+          <Input type="datetime-local" min={draft.startsLocal} value={draft.endsLocal} onChange={(e) => e.target.value && update("endsLocal", e.target.value)} />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-3">

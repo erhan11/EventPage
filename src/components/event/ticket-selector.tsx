@@ -4,19 +4,28 @@ import { Lock, Minus, Plus } from "lucide-react";
 import { useActionState, useMemo, useState } from "react";
 import { startCheckout, type CheckoutState } from "@/app/actions/checkout";
 import { TIER_LABEL, type TicketOption } from "@/lib/events/view";
-import { formatMoney, formatPrice } from "@/lib/format";
+import { fmt, formatMoney, formatPrice } from "@/lib/format";
 
-const AVAILABILITY_LABEL: Partial<Record<TicketOption["availability"], string>> = {
-  low: "Final release",
-  sold_out: "Sold out",
-  not_started: "Coming soon",
-  ended: "Sales ended",
-};
+function availabilityLabel(o: TicketOption, tz: string): string | null {
+  switch (o.availability) {
+    case "low":
+      return "Final release";
+    case "sold_out":
+      return "Sold out";
+    case "ended":
+      return "Sales ended";
+    case "not_started":
+      return o.salesStartAt ? `Opens ${fmt.date(o.salesStartAt, tz)}` : "Coming soon";
+    default:
+      return null;
+  }
+}
 
 export function TicketSelector({
   eventId,
   slug,
   currency,
+  timezone,
   options,
   disabled,
   disabledReason,
@@ -25,6 +34,7 @@ export function TicketSelector({
   eventId: string;
   slug: string;
   currency: string;
+  timezone: string;
   options: TicketOption[];
   disabled: boolean;
   disabledReason: string;
@@ -62,6 +72,7 @@ export function TicketSelector({
           const n = qty[o.id] ?? 0;
           const buyable = o.availability === "available" || o.availability === "low";
           const vip = o.tier === "vip";
+          const label = availabilityLabel(o, timezone);
           return (
             <li
               key={o.id}
@@ -72,10 +83,8 @@ export function TicketSelector({
               <div className="p-5 @xl:p-7">
                 <div className="flex flex-wrap items-center gap-2 font-ev-mono text-[10px] tracking-[0.18em] uppercase">
                   <span className={vip ? "font-semibold opacity-60" : "text-ev-accent"}>{TIER_LABEL[o.tier]}</span>
-                  {AVAILABILITY_LABEL[o.availability] && (
-                    <span className={`rounded-full border px-2 py-0.5 ${vip ? "border-ev-bg/25" : "border-ev-line"}`}>
-                      {AVAILABILITY_LABEL[o.availability]}
-                    </span>
+                  {label && (
+                    <span className={`rounded-full border px-2 py-0.5 ${vip ? "border-ev-bg/25" : "border-ev-line"}`}>{label}</span>
                   )}
                 </div>
                 <h3 className="mt-3 text-xl font-semibold tracking-tight @xl:text-2xl">{o.name}</h3>
@@ -137,7 +146,9 @@ export function TicketSelector({
           disabled={disabled || count === 0 || pending}
           className="group mt-5 flex w-full items-center justify-between rounded-full bg-ev-accent px-6 py-4 font-semibold text-ev-on-accent transition-all duration-300 ease-[var(--ease-spring)] hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
         >
-          <span>{pending ? "Reserving…" : disabled ? disabledReason : total === 0 && count > 0 ? "Get free tickets" : "Continue to payment"}</span>
+          <span>
+            {pending ? "Reserving…" : disabled ? disabledReason : count === 0 ? "Choose your tickets" : total === 0 ? "Get free tickets" : "Continue to payment"}
+          </span>
           <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">→</span>
         </button>
 

@@ -14,6 +14,7 @@ export async function generateMetadata({ params }: PageProps<"/e/[slug]">): Prom
     title: event.title,
     description: event.tagline || `${when}. Tickets on EventPage.`,
     openGraph: { title: event.title, description: `${when} — ${event.tagline}`, type: "website" },
+    twitter: { card: "summary_large_image" },
   };
 }
 
@@ -37,7 +38,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/e/
     ) : null;
 
   return (
-    <main>
+    <main id="main">
       <EventView event={event} testMode={isTestMode()} notice={notice} />
     </main>
   );

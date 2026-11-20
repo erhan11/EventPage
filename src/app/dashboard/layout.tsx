@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
 import { Logo } from "@/components/ui/brand";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Toaster } from "@/components/ui/toast";
 import { getManagedOrgId } from "@/lib/auth/access";
 import { requireUser } from "@/lib/auth/session";
 
@@ -16,7 +17,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
         <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-4 px-5 sm:px-8">
           <div className="flex items-center gap-8">
             <Logo />
-            <nav className="hidden items-center gap-1 sm:flex" aria-label="Main">
+            <nav className="flex items-center gap-1" aria-label="Main">
               <Link href="/dashboard" className="rounded-full px-3 py-1.5 text-sm text-muted hover:bg-surface hover:text-fg">
                 Events
               </Link>
@@ -37,6 +38,7 @@ export default async function DashboardLayout({ children }: LayoutProps<"/dashbo
         </div>
       </header>
       {children}
+      <Toaster />
     </div>
   );
 }

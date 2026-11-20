@@ -26,7 +26,7 @@ export default async function DashboardHome() {
   const greeting = hour < 5 ? "Still up" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <main className="mx-auto max-w-[1400px] px-5 pt-10 pb-24 sm:px-8 sm:pt-16">
+    <main id="main" className="mx-auto max-w-[1400px] px-5 pt-10 pb-24 sm:px-8 sm:pt-16">
       <section className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <span className="label-mono text-muted">{greeting}, {user.name.split(" ")[0]}</span>

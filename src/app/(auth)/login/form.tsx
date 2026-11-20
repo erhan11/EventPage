@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { signIn, type FormState } from "@/app/actions/auth";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button, Field, FormError, Input } from "@/components/ui/primitives";
 
 export function LoginForm({ next }: { next: string }) {
@@ -13,7 +14,7 @@ export function LoginForm({ next }: { next: string }) {
         <Input name="email" type="email" autoComplete="email" required defaultValue={state?.fields?.email} />
       </Field>
       <Field label="Password">
-        <Input name="password" type="password" autoComplete="current-password" required />
+        <PasswordInput name="password" autoComplete="current-password" required />
       </Field>
       <FormError message={state?.error} />
       <Button type="submit" disabled={pending} className="mt-2 h-12">

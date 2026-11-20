@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { inviteStaff, refundOrder, removeStaff, setEventStatus } from "@/app/actions/events";
 import { Button, Card, Input } from "@/components/ui/primitives";
+import { showToast } from "@/components/ui/toast";
 
 export function PublishControls({ eventId, status }: { eventId: string; status: "draft" | "published" | "cancelled" }) {
   const router = useRouter();
@@ -17,6 +18,11 @@ export function PublishControls({ eventId, status }: { eventId: string; status: 
     start(async () => {
       const r = await setEventStatus(eventId, next);
       if (!r.ok) setError(r.error);
+      else
+        showToast(
+          next === "published" ? "Published — your page is live." : next === "draft" ? "Unpublished — sales paused." : "Event cancelled.",
+          next === "cancelled" ? "neutral" : "ok",
+        );
       router.refresh();
     });
   };
@@ -60,7 +66,8 @@ export function OrderActions({ eventId, orderId, buyer, hasCheckedIn, retry }: {
         if (!confirm(msg)) return;
         start(async () => {
           const r = await refundOrder(eventId, orderId);
-          if (!r.ok) alert(r.error);
+          if (r.ok) showToast(retry ? "Refund retried with Stripe." : "Refund started — unused tickets voided.", "ok");
+          else showToast(r.error, "danger");
           router.refresh();
         });
       }}
